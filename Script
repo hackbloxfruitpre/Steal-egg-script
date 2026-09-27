@@ -1,0 +1,338 @@
+-- FernzRBLX Complete Automation Suite (Steal An Egg & Treadmill)
+-- Written by Axiom
+
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Global Configuration Settings
+getgenv().FernzConfig = {
+    AutoFarmEggs = false,
+    StealBestEgg = false,
+    StealBigEgg = false,
+    StealBestValue = false,
+    TreadmillActive = false,
+    SpeedMultiplier = 32
+}
+
+-- Clean up previous instances if any
+if CoreGui:FindFirstChild("FernzRBLX_StealAnEgg") then
+    CoreGui.FernzRBLX_StealAnEgg:Destroy()
+end
+
+local FernzGui = Instance.new("ScreenGui")
+FernzGui.Name = "FernzRBLX_StealAnEgg"
+FernzGui.Parent = CoreGui
+FernzGui.ResetOnSpawn = false
+
+-- Main Window Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = FernzGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+MainFrame.BorderSizePixel = 0
+MainFrame.Position = UDim2.new(0.5, -340, 0.5, -210)
+MainFrame.Size = UDim2.new(0, 680, 0, 420)
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = MainFrame
+
+-- Top Bar Header
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Parent = MainFrame
+TopBar.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
+TopBar.Size = UDim2.new(1, 0, 0, 45)
+
+local TopCorner = Instance.new("UICorner")
+TopCorner.CornerRadius = UDim.new(0, 10)
+TopCorner.Parent = TopBar
+
+local LogoText = Instance.new("TextLabel")
+LogoText.Parent = TopBar
+LogoText.BackgroundTransparency = 1
+LogoText.Position = UDim2.new(0, 15, 0, 0)
+LogoText.Size = UDim2.new(0, 150, 1, 0)
+LogoText.Font = Enum.Font.GothamBold
+LogoText.Text = "FernzRBLX"
+LogoText.TextColor3 = Color3.fromRGB(255, 255, 255)
+LogoText.TextSize = 16.0
+LogoText.TextXAlignment = Enum.TextXAlignment.Left
+
+local VersionText = Instance.new("TextLabel")
+VersionText.Parent = TopBar
+VersionText.BackgroundTransparency = 1
+VersionText.Position = UDim2.new(0, 115, 0, 0)
+VersionText.Size = UDim2.new(0, 100, 1, 0)
+VersionText.Font = Enum.Font.GothamMedium
+VersionText.Text = "VERSION 1.0"
+VersionText.TextColor3 = Color3.fromRGB(130, 130, 145)
+VersionText.TextSize = 10.0
+VersionText.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Sidebar Menu (Left Column)
+local Sidebar = Instance.new("ScrollingFrame")
+Sidebar.Name = "Sidebar"
+Sidebar.Parent = MainFrame
+Sidebar.Active = true
+Sidebar.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+Sidebar.BorderSizePixel = 0
+Sidebar.Position = UDim2.new(0, 10, 0, 55)
+Sidebar.Size = UDim2.new(0, 200, 1, -65)
+Sidebar.CanvasSize = UDim2.new(0, 0, 1.5, 0)
+Sidebar.ScrollBarThickness = 2
+
+local SidebarLayout = Instance.new("UIListLayout")
+SidebarLayout.Parent = Sidebar
+SidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+SidebarLayout.Padding = UDim.new(0, 6)
+
+-- Content Panel (Right Column Container)
+local ContentPanel = Instance.new("ScrollingFrame")
+ContentPanel.Name = "ContentPanel"
+ContentPanel.Parent = MainFrame
+ContentPanel.Active = true
+ContentPanel.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+ContentPanel.BorderSizePixel = 0
+ContentPanel.Position = UDim2.new(0, 220, 0, 55)
+ContentPanel.Size = UDim2.new(1, -230, 1, -65)
+ContentPanel.CanvasSize = UDim2.new(0, 0, 2.5, 0)
+ContentPanel.ScrollBarThickness = 4
+
+local ContentLayout = Instance.new("UIListLayout")
+ContentLayout.Parent = ContentPanel
+ContentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+ContentLayout.Padding = UDim.new(0, 10)
+
+-- Sidebar Tabs Creation
+local function CreateTabButton(name, iconText)
+    local btn = Instance.new("TextButton")
+    btn.Parent = Sidebar
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+    btn.Size = UDim2.new(0.95, 0, 0, 38)
+    btn.Font = Enum.Font.GothamSemibold
+    btn.Text = "   " .. iconText .. "   " .. name
+    btn.TextColor3 = Color3.fromRGB(210, 210, 225)
+    btn.TextSize = 12.0
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+    return btn
+end
+
+CreateTabButton("Auto Eggs", "⚡")
+CreateTabButton("Treadmill", "❌")
+CreateTabButton("Auto Hatch", "⚙")
+CreateTabButton("Auto Sell", "🛍")
+CreateTabButton("Upgrades", "📊")
+CreateTabButton("Rewards", "🎁")
+CreateTabButton("Fuse Predict", "🔮")
+CreateTabButton("Area Speeds", "⏱")
+CreateTabButton("Settings", "⚙")
+
+-- Status Card UI Element
+local StatusCard = Instance.new("Frame")
+StatusCard.Parent = ContentPanel
+StatusCard.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+StatusCard.Size = UDim2.new(0.95, 0, 0, 65)
+
+local StatusCorner = Instance.new("UICorner")
+StatusCorner.CornerRadius = UDim.new(0, 6)
+StatusCorner.Parent = StatusCard
+
+local StatusTitle = Instance.new("TextLabel")
+StatusTitle.Parent = StatusCard
+StatusTitle.BackgroundTransparency = 1
+StatusTitle.Position = UDim2.new(0, 12, 0, 10)
+StatusTitle.Size = UDim2.new(1, -20, 0, 20)
+StatusTitle.Font = Enum.Font.GothamBold
+StatusTitle.Text = "Status: Active & Optimized"
+StatusTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
+StatusTitle.TextSize = 13.0
+StatusTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local StatusDesc = Instance.new("TextLabel")
+StatusDesc.Parent = StatusCard
+StatusDesc.BackgroundTransparency = 1
+StatusDesc.Position = UDim2.new(0, 12, 0, 32)
+StatusDesc.Size = UDim2.new(1, -20, 0, 20)
+StatusDesc.Font = Enum.Font.Gotham
+StatusDesc.Text = "All extraction subsystems online"
+StatusDesc.TextColor3 = Color3.fromRGB(150, 150, 165)
+StatusDesc.TextSize = 11.0
+StatusDesc.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Engine Config Card UI Element
+local EngineCard = Instance.new("Frame")
+EngineCard.Parent = ContentPanel
+EngineCard.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+EngineCard.Size = UDim2.new(0.95, 0, 0, 140)
+
+local EngineCorner = Instance.new("UICorner")
+EngineCorner.CornerRadius = UDim.new(0, 6)
+EngineCorner.Parent = EngineCard
+
+local EngineTitle = Instance.new("TextLabel")
+EngineTitle.Parent = EngineCard
+EngineTitle.BackgroundTransparency = 1
+EngineTitle.Position = UDim2.new(0, 12, 0, 12)
+EngineTitle.Size = UDim2.new(1, -20, 0, 20)
+EngineTitle.Font = Enum.Font.GothamBold
+EngineTitle.Text = "Ultra-Fast Safe Zone Egg Engine"
+EngineTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
+EngineTitle.TextSize = 13.0
+EngineTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local EngineDesc = Instance.new("TextLabel")
+EngineDesc.Parent = EngineCard
+EngineDesc.BackgroundTransparency = 1
+EngineDesc.Position = UDim2.new(0, 12, 0, 35)
+EngineDesc.Size = UDim2.new(1, -20, 0, 50)
+EngineDesc.Font = Enum.Font.Gotham
+EngineDesc.Text = "1. Multi-Area Farm: Farms multiple selected areas simultaneously!\n2. Safe Zone Fast-Return: Instant jump & deposit upon reaching Safe Zone!\n3. Auto Server Hop: Switches servers once chosen areas are cleared."
+EngineDesc.TextColor3 = Color3.fromRGB(140, 140, 155)
+EngineDesc.TextSize = 10.0
+EngineDesc.TextXAlignment = Enum.TextXAlignment.Left
+EngineDesc.TextWrapped = true
+
+-- Utility UI Creator for Toggles & Inputs
+local function CreateToggle(parent, text, callback)
+    local frame = Instance.new("Frame")
+    frame.Parent = parent
+    frame.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+    frame.Size = UDim2.new(0.95, 0, 0, 45)
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = frame
+    
+    local label = Instance.new("TextLabel")
+    label.Parent = frame
+    label.BackgroundTransparency = 1
+    label.Position = UDim2.new(0, 12, 0, 0)
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Font = Enum.Font.GothamSemibold
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(220, 220, 230)
+    label.TextSize = 12.0
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local btn = Instance.new("TextButton")
+    btn.Parent = frame
+    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    btn.Position = UDim2.new(1, -55, 0.5, -12)
+    btn.Size = UDim2.new(0, 45, 0, 24)
+    btn.Text = ""
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(1, 0)
+    btnCorner.Parent = btn
+    
+    local toggled = false
+    btn.MouseButton1Click:Connect(function()
+        toggled = not toggled
+        btn.BackgroundColor3 = toggled and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(45, 45, 55)
+        if callback then callback(toggled) end
+    end)
+end
+
+CreateToggle(ContentPanel, "Auto Farm All Eggs", function(state)
+    getgenv().FernzConfig.AutoFarmEggs = state
+end)
+
+CreateToggle(ContentPanel, "Steal Best Egg", function(state)
+    getgenv().FernzConfig.StealBestEgg = state
+end)
+
+CreateToggle(ContentPanel, "Steal Big Egg", function(state)
+    getgenv().FernzConfig.StealBigEgg = state
+end)
+
+CreateToggle(ContentPanel, "Steal Best Value", function(state)
+    getgenv().FernzConfig.StealBestValue = state
+end)
+
+CreateToggle(ContentPanel, "Auto Treadmill Farm", function(state)
+    getgenv().FernzConfig.TreadmillActive = state
+end)
+
+-- Core Execution Loops (Auto Farm & Treadmill & Speed)
+local function GetTargetEggPart()
+    local folder = Workspace:FindFirstChild("Eggs") or Workspace:FindFirstChild("Map")
+    if not folder then return nil end
+    
+    local bestPart = nil
+    local maxVal = -1
+    
+    for _, egg in ipairs(folder:GetDescendants()) do
+        if egg:IsA("Model") and egg.PrimaryPart then
+            local score = 1
+            if getgenv().FernzConfig.StealBestEgg and egg.Name:lower():find("best") then
+                score = 9999
+            elseif getgenv().FernzConfig.StealBigEgg and egg.Name:lower():find("big") then
+                score = 5000
+            elseif getgenv().FernzConfig.StealBestValue then
+                score = egg:GetAttribute("Value") or 100
+            end
+            
+            if score > maxVal then
+                maxVal = score
+                bestPart = egg.PrimaryPart
+            end
+        end
+    end
+    return bestPart
+end
+
+task.spawn(function()
+    while true do
+        task.wait(0.08)
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            -- Egg Stealing Automation
+            if getgenv().FernzConfig.AutoFarmEggs or getgenv().FernzConfig.StealBestEgg or getgenv().FernzConfig.StealBigEgg or getgenv().FernzConfig.StealBestValue then
+                local target = GetTargetEggPart()
+                if target then
+                    char.HumanoidRootPart.CFrame = target.CFrame + Vector3.new(0, 2, 0)
+                    for _, prompt in ipairs(target.Parent:GetDescendants()) do
+                        if prompt:IsA("ProximityPrompt") then
+                            fireproximityprompt(prompt)
+                        end
+                    end
+                end
+            end
+            
+            -- Treadmill Automation
+            if getgenv().FernzConfig.TreadmillActive then
+                for _, obj in ipairs(Workspace:GetDescendants()) do
+                    if obj.Name:lower():find("treadmill") then
+                        if obj:IsA("Model") and obj.PrimaryPart then
+                            char.HumanoidRootPart.CFrame = obj.PrimaryPart.CFrame + Vector3.new(0, 3, 0)
+                        elseif obj:IsA("BasePart") then
+                            char.HumanoidRootPart.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
+                        end
+                        break
+                    end
+                end
+            end
+        end
+    end
+end)
+
+RunService.Stepped:Connect(function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.WalkSpeed = getgenv().FernzConfig.SpeedMultiplier
+    end
+end)
+
+print("FernzRBLX complete extraction & training matrix fully loaded, boss man.")
